@@ -20,10 +20,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Embedder using the VoyageAI embeddings API. Auto-selects between the text, multimodal,
+ * Embedder using the VoyageAI by MongoDB embeddings API. Auto-selects between the text, multimodal,
  * and contextualized endpoints based on the configured model name.
  *
- * @see <a href="https://docs.voyageai.com/">VoyageAI Documentation</a>
+ * @see <a href="https://docs.voyageai.com/">VoyageAI by MongoDB Documentation</a>
  * @author bjorncs
  */
 @Beta
@@ -53,7 +53,7 @@ public class VoyageAIEmbedder extends AbstractHttpEmbedder implements Embedder {
         this.config = config;
         this.runtime = runtime;
         if (config.apiKeySecretRef().isBlank())
-            throw new IllegalArgumentException("'api-key-secret-ref' must be configured for VoyageAI embedder");
+            throw new IllegalArgumentException("'api-key-secret-ref' must be configured for VoyageAI by MongoDB embedder");
         this.apiKey = secrets.get(config.apiKeySecretRef());
         this.batching = Embedder.Batching.of(
                 config.batching().maxSize(), Duration.ofMillis(config.batching().maxDelayMillis()));
@@ -68,7 +68,7 @@ public class VoyageAIEmbedder extends AbstractHttpEmbedder implements Embedder {
     @Override
     public List<Integer> embed(String text, Context context) {
         throw new UnsupportedOperationException(
-                "VoyageAI embedder only supports embed() with TensorType. Use embed(String, Context, TensorType) instead.");
+                "VoyageAI by MongoDB embedder only supports embed() with TensorType. Use embed(String, Context, TensorType) instead.");
     }
 
     @Override
@@ -112,9 +112,11 @@ public class VoyageAIEmbedder extends AbstractHttpEmbedder implements Embedder {
             request = MultimodalRequest.of(
                     texts.get(0), config.model(), inputType, config.truncate(), config.dimensions(), outputDataType);
         } else if (isContextual) {
-            // Contextual API treats the text list as chunks of a single document; batching is
-            // disabled to prevent cross-document context contamination from independent embed()
-            // calls being combined by the framework
+            // Contextual API is called with a flat list[str] input and server-side auto-chunking
+            // (enable_auto_chunking=true, chunk_size=32000) so each document is chunked and each
+            // chunk embedded in the context of its siblings; batching is disabled to prevent
+            // cross-document context contamination from independent embed() calls being combined
+            // by the framework
             request = ContextualRequest.of(
                     texts, config.model(), inputType, config.dimensions(), outputDataType);
         } else {
@@ -130,8 +132,11 @@ public class VoyageAIEmbedder extends AbstractHttpEmbedder implements Embedder {
         if (isContextual) {
             var response = fromJson(body, ContextualResponse.class);
             totalTokens = response.usage != null ? response.usage.totalTokens() : 0;
-            encoded = response.data.get(0).data.stream()
-                    .sorted(Comparator.comparingInt(TextEmbeddingData::index))
+            // Auto-chunking may return one result document per input; concatenate each document's
+            // chunk embeddings in index order, preserving document order.
+            encoded = response.data.stream()
+                    .flatMap(doc -> doc.data.stream()
+                            .sorted(Comparator.comparingInt(TextEmbeddingData::index)))
                     .map(TextEmbeddingData::embedding)
                     .toList();
         } else {
@@ -207,16 +212,22 @@ public class VoyageAIEmbedder extends AbstractHttpEmbedder implements Embedder {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record ContextualRequest(
-            @JsonProperty("inputs") List<List<String>> inputs,
+            @JsonProperty("inputs") List<String> inputs,
             @JsonProperty("model") String model,
             @JsonProperty("input_type") @JsonInclude(JsonInclude.Include.NON_NULL) String inputType,
+            @JsonProperty("enable_auto_chunking") boolean enableAutoChunking,
+            @JsonProperty("chunk_size") int chunkSize,
             @JsonProperty("output_dimension") @JsonInclude(JsonInclude.Include.NON_NULL) Integer outputDimension,
             @JsonProperty("output_dtype") @JsonInclude(JsonInclude.Include.NON_NULL) String outputDtype,
             @JsonProperty("encoding_format") String encodingFormat) {
 
+        // Server-side auto-chunking upper bound in tokens; matches the models' 32K context window.
+        private static final int AUTO_CHUNK_SIZE = 32000;
+
         static ContextualRequest of(List<String> texts, String model, String inputType,
                                     int outputDimension, String outputDtype) {
-            return new ContextualRequest(List.of(texts), model, inputType, outputDimension, outputDtype, "base64");
+            return new ContextualRequest(texts, model, inputType, true, AUTO_CHUNK_SIZE,
+                                         outputDimension, outputDtype, "base64");
         }
     }
 

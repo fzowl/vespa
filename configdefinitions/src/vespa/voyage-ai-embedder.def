@@ -2,13 +2,13 @@
 
 package=ai.vespa.embedding.config
 
-# Reference to the secret in Vespa's secret store containing the VoyageAI API key
+# Reference to the secret in Vespa's secret store containing the VoyageAI by MongoDB API key
 apiKeySecretRef          string
 
-# VoyageAI API endpoint URL (auto-selected between text, multimodal, and contextualized endpoints based on model)
+# VoyageAI by MongoDB API endpoint URL (auto-selected between text, multimodal, and contextualized endpoints based on model)
 endpoint                 string default="https://api.voyageai.com/v1/embeddings"
 
-# VoyageAI model name (e.g., voyage-3.5, voyage-3.5-lite, voyage-code-3, voyage-finance-2)
+# VoyageAI by MongoDB model name (e.g., voyage-4, voyage-4-lite, voyage-code-4, voyage-context-4, voyage-multimodal-3.5)
 model                    string
 
 # Output dimension

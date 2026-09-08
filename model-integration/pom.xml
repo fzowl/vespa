@@ -267,7 +267,7 @@
       <version>${jackson-annotations.vespa.version}</version>
       <scope>provided</scope>
     </dependency>
-    <!-- OkHttp for VoyageAI embedder HTTP client -->
+    <!-- OkHttp for VoyageAI by MongoDB embedder HTTP client -->
     <dependency>
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>okhttp</artifactId>
