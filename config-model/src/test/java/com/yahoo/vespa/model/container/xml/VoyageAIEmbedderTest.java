@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests for VoyageAI embedder configuration parsing and validation.
+ * Tests for VoyageAI by MongoDB embedder configuration parsing and validation.
  *
  * @author bjorncs
  */
@@ -33,7 +33,7 @@ public class VoyageAIEmbedderTest {
         var cluster = model.getContainerClusters().get("container");
 
         var component = cluster.getComponentsMap().get(new ComponentId("voyage-full"));
-        assertNotNull(component, "VoyageAI embedder component should be present");
+        assertNotNull(component, "VoyageAI by MongoDB embedder component should be present");
         assertInstanceOf(VoyageAIEmbedder.class, component);
 
         var config = getConfig(cluster, "voyage-full");

@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests for VoyageAI embedder using MockWebServer to simulate API responses.
+ * Tests for VoyageAI by MongoDB embedder using MockWebServer to simulate API responses.
  *
  * @author bjorncs
  */

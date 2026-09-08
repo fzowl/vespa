@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Integration tests for VoyageAI embedder with real API.
+ * Integration tests for VoyageAI by MongoDB embedder with real API.
  *
  * @author bjorncs
  */
