@@ -57,7 +57,7 @@ class EmbedderTestUtils {
         return Base64.getEncoder().encodeToString(bytes);
     }
 
-    /** Builds a JSON response body with one or more base64-encoded embeddings (OpenAI/VoyageAI shape). */
+    /** Builds a JSON response body with one or more base64-encoded embeddings (OpenAI/VoyageAI by MongoDB shape). */
     static String createBase64EmbeddingResponse(String... base64Embeddings) {
         var dataEntries = new StringBuilder();
         for (int i = 0; i < base64Embeddings.length; i++) {

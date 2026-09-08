@@ -13,7 +13,7 @@ import static com.yahoo.vespa.model.container.ContainerModelEvaluation.INTEGRATI
 import static com.yahoo.vespa.model.container.component.EmbedderBatchingConfig.parseBatchingElement;
 
 /**
- * Configuration builder for VoyageAI embedder component.
+ * Configuration builder for VoyageAI by MongoDB embedder component.
  *
  * @author bjorncs
  */
@@ -42,8 +42,8 @@ public class VoyageAIEmbedder extends TypedComponent implements VoyageAiEmbedder
 
         if (!model.startsWith("voyage-")) {
             throw new IllegalArgumentException(
-                    "Invalid VoyageAI model name: " + model + ". " +
-                    "Model name should start with 'voyage-' (e.g., voyage-3, voyage-code-3).");
+                    "Invalid VoyageAI by MongoDB model name: " + model + ". " +
+                    "Model name should start with 'voyage-' (e.g., voyage-4, voyage-code-4).");
         }
     }
 

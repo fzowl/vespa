@@ -20,10 +20,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Embedder using the VoyageAI embeddings API. Auto-selects between the text, multimodal,
+ * Embedder using the VoyageAI by MongoDB embeddings API. Auto-selects between the text, multimodal,
  * and contextualized endpoints based on the configured model name.
  *
- * @see <a href="https://docs.voyageai.com/">VoyageAI Documentation</a>
+ * @see <a href="https://docs.voyageai.com/">VoyageAI by MongoDB Documentation</a>
  * @author bjorncs
  */
 @Beta
@@ -53,7 +53,7 @@ public class VoyageAIEmbedder extends AbstractHttpEmbedder implements Embedder {
         this.config = config;
         this.runtime = runtime;
         if (config.apiKeySecretRef().isBlank())
-            throw new IllegalArgumentException("'api-key-secret-ref' must be configured for VoyageAI embedder");
+            throw new IllegalArgumentException("'api-key-secret-ref' must be configured for VoyageAI by MongoDB embedder");
         this.apiKey = secrets.get(config.apiKeySecretRef());
         this.batching = Embedder.Batching.of(
                 config.batching().maxSize(), Duration.ofMillis(config.batching().maxDelayMillis()));
@@ -68,7 +68,7 @@ public class VoyageAIEmbedder extends AbstractHttpEmbedder implements Embedder {
     @Override
     public List<Integer> embed(String text, Context context) {
         throw new UnsupportedOperationException(
-                "VoyageAI embedder only supports embed() with TensorType. Use embed(String, Context, TensorType) instead.");
+                "VoyageAI by MongoDB embedder only supports embed() with TensorType. Use embed(String, Context, TensorType) instead.");
     }
 
     @Override
@@ -112,9 +112,11 @@ public class VoyageAIEmbedder extends AbstractHttpEmbedder implements Embedder {
             request = MultimodalRequest.of(
                     texts.get(0), config.model(), inputType, config.truncate(), config.dimensions(), outputDataType);
         } else if (isContextual) {
-            // Contextual API treats the text list as chunks of a single document; batching is
+            // Contextual API treats the text list as the chunks of a single document; batching is
             // disabled to prevent cross-document context contamination from independent embed()
-            // calls being combined by the framework
+            // calls being combined by the framework. Per the official spec the 'inputs' field is
+            // Union[List[List[str]], List[str]]; we send the List[List[str]] (pre-chunked document)
+            // form, which is valid for both document and query input types.
             request = ContextualRequest.of(
                     texts, config.model(), inputType, config.dimensions(), outputDataType);
         } else {
@@ -205,6 +207,14 @@ public class VoyageAIEmbedder extends AbstractHttpEmbedder implements Embedder {
         @JsonProperty("usage") Usage usage;
     }
 
+    /**
+     * Request body for the contextualized chunk embeddings API. The 'inputs' field follows the
+     * official spec type {@code Union[List[List[str]], List[str]]}; both formats are accepted by
+     * the API. This embedder sends the {@code List[List[str]]} (list of documents, each a list of
+     * chunks) form.
+     *
+     * @see <a href="https://docs.voyageai.com/docs/contextualized-chunk-embeddings">Contextualized Chunk Embeddings</a>
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record ContextualRequest(
             @JsonProperty("inputs") List<List<String>> inputs,

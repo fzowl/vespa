@@ -118,7 +118,7 @@ public abstract class AbstractHttpEmbedder extends AbstractComponent {
 
     /**
      * Parses an error message from a provider response. Handles both the OpenAI/Mistral shape
-     * ({@code {"error":{"message":"..."}}}) and the VoyageAI shape ({@code {"detail":"..."}}).
+     * ({@code {"error":{"message":"..."}}}) and the VoyageAI by MongoDB shape ({@code {"detail":"..."}}).
      */
     private static Optional<String> parseErrorMessage(String body) {
         try {
